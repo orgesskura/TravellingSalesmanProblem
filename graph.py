@@ -72,7 +72,19 @@ class Graph:
     # commit to the swap if it improves the cost of the tour.
     # Return True/False depending on success.
     def trySwap(self,i):
-        return 0
+        previous = self.perm[(i-1)%self.n]
+        first = self.perm[i]
+        second = self.perm[(i+1)%self.n]
+        next = self.perm[(i+2)%self.n]
+        firstTime = self.dists[previous][first] + self.dists[first][second] + self.dists[second][next]
+        secondTime = self.dists[previous][second] + self.dists[second][first] + self.dists[first][next]
+        if(firstTime < secondTime):
+            return False
+        else:
+            self.perm[i] = second
+            self.perm[(i+1)%self.n] = first
+            return True    
+        
 
 
     # Consider the effect of reversiing the segment between
@@ -80,9 +92,9 @@ class Graph:
     # if it improves the tour value.
     # Return True/False depending on success.              
     def  tryReverse(self,i,j):
+        return 0
 
-
-     def swapHeuristic(self):
+    def swapHeuristic(self):
         better = True
         while better:
             better = False
