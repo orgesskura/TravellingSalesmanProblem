@@ -62,7 +62,7 @@ class Graph:
     def tourValue(self):
         tour_value=0
         for i in range(self.n-1):
-          tour_value+=self.dists[self.perm[i]][self.perm[i+1]]
+          tour_value+=self.dists[self.perm[i]][self.perm[(i+1)%self.n]]
         tour_value+=self.dists[self.perm[self.n-1]][self.perm[0]]
         return tour_value  
 
@@ -71,6 +71,9 @@ class Graph:
     # Attempt the swap of cities i and i+1 in self.perm and commit
     # commit to the swap if it improves the cost of the tour.
     # Return True/False depending on success.
+    
+
+    #implement in case we have 2 or 3 nodes
     def trySwap(self,i):
         previous = self.perm[(i-1)%self.n]
         first = self.perm[i]
@@ -78,7 +81,7 @@ class Graph:
         next = self.perm[(i+2)%self.n]
         firstTime = self.dists[previous][first] + self.dists[first][second] + self.dists[second][next]
         secondTime = self.dists[previous][second] + self.dists[second][first] + self.dists[first][next]
-        if(firstTime < secondTime):
+        if(firstTime <= secondTime):
             return False
         else:
             self.perm[i] = second
@@ -92,7 +95,33 @@ class Graph:
     # if it improves the tour value.
     # Return True/False depending on success.              
     def  tryReverse(self,i,j):
-        return 0
+     currentTour = 0
+     probableTour=0
+     currentTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[i]]
+     probableTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[j]]
+     currentTour+=self.dists[self.perm[j]][self.perm[(j+1)%self.n]]
+     probableTour+=self.dists[self.perm[i]][self.perm[(j+1)%self.n]]
+     perm=[self.perm[i] for i in range(self.n)]
+     first=i
+     second=j
+     while(first<second):
+           perm[first] = self.perm[second]
+           perm[second] = self.perm[first]
+           first=(first+1)%self.n
+           second= (second-1)%self.n
+        
+     if currentTour <= probableTour :
+            return False
+     else :
+            for i in range(self.n) :
+              self.perm[i] = perm[i]
+            return True    
+ 
+            
+
+
+
+
 
     def swapHeuristic(self):
         better = True
