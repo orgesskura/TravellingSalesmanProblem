@@ -113,8 +113,9 @@ class Graph:
      if currentTour <= probableTour :
             return False
      else :
-            for i in range(self.n) :
+            while i<=j:
               self.perm[i] = perm[i]
+              i+=1
             return True    
  
             
@@ -145,4 +146,16 @@ class Graph:
     # from node 0, taking the closest (unused) node as 'next'
     # each time.
     def Greedy(self):
-        return 0
+        nodes = [i for i in range(1,self.n)]
+        counter = 0
+        i = 0
+        self.perm[0] = 0
+        while len(nodes)>0:
+            counter+=1
+            min_nr = 0
+            min_nr = min([self.dists[i][j] for j in nodes])
+            i = self.dists[i].index(min_nr)
+            self.perm[counter]=i
+            nodes.remove(i)
+
+               
