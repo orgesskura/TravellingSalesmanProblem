@@ -61,9 +61,8 @@ class Graph:
     # current tour (as represented by self.perm).
     def tourValue(self):
         tour_value=0
-        for i in range(self.n-1):
+        for i in range(self.n):
           tour_value+=self.dists[self.perm[i]][self.perm[(i+1)%self.n]]
-        tour_value+=self.dists[self.perm[self.n-1]][self.perm[0]]
         return tour_value  
 
         
@@ -154,7 +153,11 @@ class Graph:
             counter+=1
             min_nr = 0
             min_nr = min([self.dists[i][j] for j in nodes])
-            i = self.dists[i].index(min_nr)
+            #i = self.dists[i].index(min_nr)
+            minimum=[j  for j in nodes if self.dists[i][j]==min_nr]
+            for k in nodes:
+                if k in minimum:
+                    i = k
             self.perm[counter]=i
             nodes.remove(i)
 
