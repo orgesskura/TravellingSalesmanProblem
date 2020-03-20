@@ -158,6 +158,7 @@ class Graph:
             for k in nodes:
                 if k in minimum:
                     i = k
+                    break
             self.perm[counter]=i
             nodes.remove(i)
 
