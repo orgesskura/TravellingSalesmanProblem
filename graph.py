@@ -94,24 +94,24 @@ class Graph:
     # if it improves the tour value.
     # Return True/False depending on success.              
     def  tryReverse(self,i,j):
-     currentTour = 0
-     probableTour=0
-     currentTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[i]]
-     probableTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[j]]
-     currentTour+=self.dists[self.perm[j]][self.perm[(j+1)%self.n]]
-     probableTour+=self.dists[self.perm[i]][self.perm[(j+1)%self.n]]
-     perm=[self.perm[i] for i in range(self.n)]
-     first=i
-     second=j
-     while(first<second):
-           perm[first] = self.perm[second]
-           perm[second] = self.perm[first]
-           first=(first+1)%self.n
-           second= (second-1)%self.n
-        
-     if currentTour <= probableTour :
-            return False
-     else :
+        currentTour = 0
+        probableTour=0
+        currentTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[i]]
+        probableTour+=self.dists[self.perm[(i-1)%self.n]][self.perm[j]]
+        currentTour+=self.dists[self.perm[j]][self.perm[(j+1)%self.n]]
+        probableTour+=self.dists[self.perm[i]][self.perm[(j+1)%self.n]]
+        perm=[self.perm[i] for i in range(self.n)]
+        first=i
+        second=j
+        while(first<second):
+            perm[first] = self.perm[second]
+            perm[second] = self.perm[first]
+            first=(first+1)%self.n
+            second= (second-1)%self.n
+            
+        if currentTour <= probableTour :
+                return False
+        else :
             while i<=j:
               self.perm[i] = perm[i]
               i+=1
@@ -167,11 +167,13 @@ class Graph:
             prevDistance = 0
             newDistance = self.tourValue()
             cond = True
+            m = 10
             while cond:
                 prevDistance = newDistance
                 self.improve()
                 newDistance = self.tourValue()
-                if newDistance >= prevDistance :
+                m -=1
+                if newDistance >= prevDistance  or m<0:
                     cond = False
 
     def improve(self):
