@@ -1,4 +1,5 @@
 import math
+import random
 
 
 def euclid(p,q):
@@ -71,8 +72,6 @@ class Graph:
     # commit to the swap if it improves the cost of the tour.
     # Return True/False depending on success.
     
-
-    #implement in case we have 2 or 3 nodes
     def trySwap(self,i):
         previous = self.perm[(i-1)%self.n]
         first = self.perm[i]
@@ -153,7 +152,6 @@ class Graph:
             counter+=1
             min_nr = 0
             min_nr = min([self.dists[i][j] for j in nodes])
-            #i = self.dists[i].index(min_nr)
             minimum=[j  for j in nodes if self.dists[i][j]==min_nr]
             for k in nodes:
                 if k in minimum:
@@ -162,39 +160,40 @@ class Graph:
             self.perm[counter]=i
             nodes.remove(i)
 
-
-    def linKernighan(self):
+    # algorithm for part C : I chose Lin-Kerninghan Heuristic for Part C
+    # this is the main method where we constanly try to improve the tour value
+    def myPartC(self):
             prevDistance = 0
             newDistance = self.tourValue()
             cond = True
-            m = 10
             while cond:
                 prevDistance = newDistance
-                self.improve()
+                self.improveAll()
                 newDistance = self.tourValue()
-                m -=1
-                if newDistance >= prevDistance  or m<0:
+                if newDistance >= prevDistance:
                     cond = False
 
-    def improve(self):
+    # improves the tour
+    def improveAll(self):
             for i in range(self.n):
                 self.improveTour(i, False)
 
+    # improves the tour starting from node1
     def improveTour(self, node1, cond):
             node2 = 0
             if cond:
                 node2 = (node1-1)%self.n
             else:
                 node2 = ((node1+1)%self.n)
-            node3 = self.getNearestNeighbor(node2)
+            node3 = self.nearestNeighbor(node2)
             if node3!= -1 and self.getDistance(node2,node3) < self.getDistance(node1,node2):
                 self.mainAlgorithm(node1,node2,node3)
             else:
                 if not cond :
                     self.improveTour(node1, True)
-
-    def getNearestNeighbor(self, idx):
-            minimum = 3000000000
+    #get index of the nearest neighbor of idx which is the index of the node we want in self.perm
+    def nearestNeighbor(self, idx):
+            minimum = math.inf
             node = -1
             ourNode = self.perm[idx]
             for i in range(self.n):
@@ -205,102 +204,105 @@ class Graph:
                         minimum = dist
             return node 
             
-            
+    #This function is actually the step four from the lin-kernighan's origainnal paper       
     def mainAlgorithm(self, node1, node2, node3):
-            tIdx = []
-            tIdx.insert(0, -1)
-            tIdx.insert(1, node1)
-            tIdx.insert(2, node2)
-            tIdx.insert(3, node3)
+            list1 = []
+            list1.insert(0, -1)
+            list1.insert(1, node1)
+            list1.insert(2, node2)
+            list1.insert(3, node3)
             initialGain = self.getDistance(node1,node2) - self.getDistance(node2,node3)
-            gStar = 0
-            gi = initialGain
+            g = 0
+            gain = initialGain
             k = 3
             i = 4
             while True:
-                newT = self.selectNewT(tIdx)
-                if newT == -1:
+                tour = self.selectTour(list1)
+                if tour == -1:
                     break
-                tIdx.insert(i, newT)
-                tiplus1 = self.getNextPossibleY(tIdx)
+                list1.insert(i, tour)
+                tiplus1 = self.getNextPossibleY(list1)
                 if tiplus1 == -1:
                     break
-                gi+= self.getDistance(tIdx[len(tIdx) - 2],newT)
-                if gi - self.getDistance(newT,node1)> gStar:
-                    gStar = gi - self.getDistance(newT,node1)
+                gain+= self.getDistance(list1[len(list1) - 2],tour)
+                if gain - self.getDistance(tour,node1)> g:
+                    g = gain - self.getDistance(tour,node1)
                     k = i
-                tIdx.append(tiplus1)
-                gi -= self.getDistance(newT,tiplus1)
+                list1.append(tiplus1)
+                gain -= self.getDistance(tour,tiplus1)
                 i+=2
-            if gStar > 0:
-                tIdx[k+1] = tIdx[1]
-                self.perm = self.getTPrime(tIdx, k)
+            if g > 0:
+                list1[k+1] = list1[1]
+                self.perm = self.getNewTour(list1, k)
 
-    def getNextPossibleY(self, tIdx):
-            ti = tIdx[len(tIdx)-1]
+    #This function gets all the ys that fit the criterion for step 4
+    def getNextPossibleY(self, list1):
+            ti = list1[len(list1)-1]
             ys = []
             for i in range(self.n):
-                if self.isDisjunctive(tIdx, i, ti) == False:
+                if self.isDisjunctive(list1, i, ti) == False:
                     continue
-                if self.isPositiveGain(tIdx, i) == False:
+                if self.isPositiveGain(list1, i) == False:
                     continue
-                if self.nextXPossible(tIdx, i) == False:
+                if self.nextXPossible(list1, i) == False:
                     continue
                 ys.append(i)
-            minDist = 3000000000.0
+            minDist = math.inf
             minNode = -1
             for i in ys:
                 if self.getDistance(ti,i) < minDist:
                     minNode = i
                     minDist = self.getDistance(ti,i)
             return minNode
+    #This function implements the part e from the point 4 of the paper
+    def nextXPossible(self, list1, i):
+            return self.isConnected(list1, i, (i+1)%self.n) or self.isConnected(list1, i, (i-1)%self.n)
 
-    def nextXPossible(self, tIdx, i):
-            return self.isConnected(tIdx, i, (i+1)%self.n) or self.isConnected(tIdx, i, (i-1)%self.n)
-
-    def isConnected(self, tIdx, x, y):
+    
+    def isConnected(self, list1, x, y):
             if x==y:
                 return False
-            for i in range(1, len(tIdx)-1, 2):
-                if tIdx[i]==x and tIdx[i+1]==y:
+            for i in range(1, len(list1)-1, 2):
+                if list1[i]==x and list1[i+1]==y:
                     return False
-                if tIdx[i]==y and tIdx[i+1]==x:
+                if list1[i]==y and list1[i+1]==x:
                     return False
             return True
 
-    def isPositiveGain(self, tIdx, ti):
+    def isPositiveGain(self, list1, ti):
             gain = 0.0
-            for i in range(1, len(tIdx)-2):
-                t1 = tIdx[i]
-                t2 = tIdx[i+1]
+            for i in range(1, len(list1)-2):
+                t1 = list1[i]
+                t2 = list1[i+1]
                 t3 = 0
-                if i==len(tIdx)-3:
+                if i==len(list1)-3:
                     t3 = ti
                 else:
-                    t3 = tIdx[i+2]
+                    t3 = list1[i+2]
                 gain+=self.getDistance(t2,t3) - self.getDistance(t1,t2)
             if gain>0:
                 return True
             return False
-
-    def selectNewT(self, tIdx):
-            option1 = (tIdx[len(tIdx)-1]-1)%self.n
-            option2 = (tIdx[len(tIdx)-1]+1)%self.n
-            tour1 = self.constructNewTour2(self.perm, tIdx, option1)
+    #This function gets a new tour with the characteristics described in the paper in step 4.a.
+    def selectTour(self, list1):
+            option1 = (list1[len(list1)-1]-1)%self.n
+            option2 = (list1[len(list1)-1]+1)%self.n
+            tour1 = self.constructtourour2(self.perm, list1, option1)
             if self.isTour(tour1) == True:
                 return option1
             else:
-                tour2 = self.constructNewTour2(self.perm, tIdx, option2)
+                tour2 = self.constructtourour2(self.perm, list1, option2)
                 if self.isTour(tour2) == True:
                     return option2
             return (-1)
 
-    def constructNewTour2(self, tour, tIdx, newItem):
-            changes = tIdx.copy()
+    def constructtourour2(self, tour, list1, newItem):
+            changes = list1.copy()
             changes.append(newItem)
             changes.append(changes[1])
-            return self.constructNewTour(tour, changes)
+            return self.constructtourour(tour, changes)
 
+    # this function determines if a sequence of nodes is a tour
     def isTour(self, tour):
             if len(tour) != self.n:
                 return False
@@ -309,12 +311,14 @@ class Graph:
                     if tour[i]==tour[j]:
                         return False
             return True
+    
+    # construct a new tour out of tIndex
+    def getNewTour(self, tIndex, s):
+            list1 = [tIndex[i] for i in range(s+2)]
+            return self.constructtourour(self.perm, list1)
 
-    def getTPrime(self, tIdx, s):
-            list1 = [tIdx[i] for i in range(s+2)]
-            return self.constructNewTour(self.perm, list1)
-
-    def constructNewTour(self, tour, changes):
+    #This function constructs a new Tour deleting the X sets and adding the Y sets
+    def constructtourour(self, tour, changes):
             currentEdges = self.deriveEdgesFromTour(tour)
             X = self.deriveX(changes)
             Y = self.deriveY(changes)
@@ -331,6 +335,7 @@ class Graph:
                 currentEdges.append(i)
             return self.createTourFromEdges(currentEdges, s)
 
+    #This function takes a list of edges and converts it into a tour
     def createTourFromEdges(self, edges, s):
             tour = []
             i = 0
@@ -366,6 +371,7 @@ class Graph:
                 k+=1
             return tour
 
+    #Get the list of edges from the tour index and this will be the list of edges that will be deleted
     def deriveX(self, changes):
             es = []
             for i in range(1, len(changes)-2, 2):
@@ -373,40 +379,61 @@ class Graph:
                 es.append(e)
             return es
 
+    #get the list from the tour index and this will be the list of edges that will be added
     def deriveY(self, changes):
             es = []
             for i in range(2, len(changes)-1, 2):
                 e = Edge(self.perm[changes[i]], self.perm[changes[i+1]])
                 es.append(e)
             return es
-
+    
+    # get a list of the edges of the tour given a tour
     def deriveEdgesFromTour(self, tour):
             es = []
             for i in range(len(tour)):
                 e =Edge(tour[i], tour[(i+1)%len(tour)])
                 es.append(e)
             return es
-
-    def isDisjunctive(self, tIdx, x, y):
+    
+    #This function allows to check if an edge is already on either X or Y
+    def isDisjunctive(self, list1, x, y):
             if x==y:
                 return False
-            for i in range(len(tIdx)-1):
-                if tIdx[i] == x and tIdx[i+1] == y:
+            for i in range(len(list1)-1):
+                if list1[i] == x and list1[i+1] == y:
                     return False
-                if tIdx[i] == y and tIdx[i+1] == x:
+                if list1[i] == y and list1[i+1] == x:
                     return False
             return True
 
+    # given a specific node we can find the index of that node in the current self.perm
     def getIndex(self, node):
             for i in range(self.n):
                 if node == self.perm[i]:
                     return i
             return -1
-
+    # return distance between 2 nodes gainven their indeces in self.perm
     def getDistance(self,a,b):
         return self.dists[self.perm[a]][self.perm[b]]
+    
+    #create a random tour using the Drunken Sailor Algorithm
+    def randomTour(self):
+        for i in range(self.n):
+            index = random.randint(0,i)
+            nr = self.perm[index]
+            self.perm[index] = self.perm[i]
+            self.perm[i] = nr
+    
+    # run tests when random tour is used
+    def runRandomTours(self):
+        for i in range(15):
+            self.randomTour()
+            self.myPartC()
+            print(self.tourValue())
+            self.perm = list(range(self.n))
 
-
+# create an edge object as it is essential to the heuristic to have an edge object
+#since we do comparisons with edge values, __eq__,__lt__, and __gt__ are added to edge object to support comparisons
 class Edge:
 	point1 = 0
 	point2 = 0
